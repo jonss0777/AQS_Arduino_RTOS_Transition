@@ -14,6 +14,7 @@
 // #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>  // OLED library
 
+
 #define VBATPIN A13  // this is also D9 button A disable pullup to read analog
 #define BUTTON_A 15  // for the adafruit Feather ESP32 v2 (ABC, 15 32 14) Oled button also A7 enable pullup to read button
 #define BUTTON_B 32  // for the adafruit Feather ESP32 v2 (ABC, 15 32 14) Oled button also A7 enable pullup to read button
@@ -70,7 +71,7 @@ typedef struct {
   float Vbat;
 } data;
 
-data sensorData; // instantiate a sensor data structure
+//data sensorData; // instantiate a sensor data structure
 
 // wifi and google sheets provisioning 
 // typedef struct {

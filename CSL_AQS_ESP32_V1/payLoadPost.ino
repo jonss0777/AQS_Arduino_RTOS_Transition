@@ -3,18 +3,18 @@
   Running on TLS 1.2 using mbedTLS
   Suporting the following chipersuites:
 */
-//#include <WiFi.h>
+// #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include "CSL_AQS_ESP32_V1.h"
 
 // #define PRE_PAYLOAD_APPEND_ROW "{\"command\":\"appendRow\",\"sheet_name\":\"Sheet1\",\"values\":\""
 // #define PRE_PAYLOAD_ADD_HEADER "{\"command\":\"addHeader\",\"sheet_name\":\"Sheet1\",\"values\":\""
 #define POST_PAYLOAD "\"}"
-#define SERVER "script.google.com"  // Server URL
-
+#define SERVER "script.google.com" // Server URL
+// --- Add your heartbeat server address ---
 
 // Google Certificate
-const char* test_root_ca = R"string_literal(
+const char *test_root_ca = R"string_literal(
 // -----BEGIN CERTIFICATE(Old/Previous)-----
 // MIIFVzCCAz+gAwIBAgINAgPlk28xsBNJiGuiFzANBgkqhkiG9w0BAQwFADBHMQsw
 // CQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExMQzEU
@@ -66,91 +66,101 @@ p/SgguMh1YQdc4acLa/KNJvxn7kjNuK8YAOdgLOaVsjh4rsUecrNIdSUtUlD
 
 WiFiClientSecure client;
 
-void initializeClient() {
-  client.setCACert(test_root_ca);
+void initializeClient()
+{
+    client.setCACert(test_root_ca);
 }
 
 // --- Payload Upload (Runs independently on Core 0) ---
-void doPost(String outstr) {
+void doPost(String outstr)
+{
 
-  if (uxQueueMessagesWaiting(sensorQueue) >= BATCH_SIZE) {
+    if (uxQueueMessagesWaiting(sensorQueue) >= BATCH_SIZE)
+    {
 
+        String payload = outstr + POST_PAYLOAD;
+        Serial.println(payload);
 
-  String payload = outstr + POST_PAYLOAD;
-  Serial.println(payload);
+        Serial.print("\nStarting connection to server... ");
+        if (!client.connect(SERVER, 443))
+            Serial.println("Connection failed");
+        else
+        {
+            Serial.println("Connected to server");
+            // Make a HTTP request:
+            // client.println("POST /macros/s/{GSID}/exec? HTTP/1.0");//value=Hello HTTP/1.0");
+            client.println("POST /macros/s/" + String(provisionInfo.gsid) + "/exec? HTTP/1.0"); // value=Hello HTTP/1.0");
+            client.println("Host: " SERVER);
+            client.println("Content-Type: application/x-www-form-urlencoded");
+            // client.println("Connection: close");
+            client.print("Content-Length: ");
+            client.println(payload.length());
+            client.println();
+            // Serial.println(String(PRE_PAYLOAD) + String(payload) + String(POST_PAYLOAD));
+            client.print(payload);
+            client.println();
+            delay(200);
+            Serial.println("\nResponse from client: ");
 
-  Serial.print("\nStarting connection to server... ");
-  if (!client.connect(SERVER, 443))
-    Serial.println("Connection failed");
-  else {
-    Serial.println("Connected to server");
-    // Make a HTTP request:
-    // client.println("POST /macros/s/AKfycbxwxxCaHA24OhuHJWrZQ79a6qOfYCm4-fPbDFGRt9JSZEGv345UuFR-kJw6Sgv7wZq3Qw/exec? HTTP/1.0");//value=Hello HTTP/1.0");
-    client.println("POST /macros/s/" + String(provisionInfo.gsid) + "/exec? HTTP/1.0");  //value=Hello HTTP/1.0");
-    client.println("Host: " SERVER);
-    client.println("Content-Type: application/x-www-form-urlencoded");
-    //client.println("Connection: close");
-    client.print("Content-Length: ");
-    client.println(payload.length());
-    client.println();
-    //Serial.println(String(PRE_PAYLOAD) + String(payload) + String(POST_PAYLOAD));
-    client.print(payload);
-    client.println();
-    delay(200);
-    Serial.println("\nResponse from client: ");
-
-    while (client.connected()) {
-      while (client.available()) {
-        char c = client.read();
-        Serial.write(c);
-      }
+            while (client.connected())
+            {
+                while (client.available())
+                {
+                    char c = client.read();
+                    Serial.write(c);
+                }
+            }
+            client.stop();
+        }
     }
-    client.stop();
-  }
 }
 
-
-
 // --- Heartbeat Task (Runs independently on Core 0) ---
-void HeartbeatTask(void * pvParameters) {
-  Serial.println("Initialize Heartbeat Task");
-  String payload = "Alive";
-  
-  while(1) {
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.print("\nStarting connection to server... ");
-      if (!client.connect(SERVER, 443)) {
-        Serial.println("Connection failed");
-      }
-      else {
-      Serial.println("Connected to server");
-      // Make a HTTP request:
-      // client.println("POST /macros/s/{gsid}/exec? HTTP/1.0");//value=Hello HTTP/1.0");
-      client.println("POST /macros/s/" + String(provisionInfo.gsid) + "/exec? HTTP/1.0");  //value=Hello HTTP/1.0");
-      client.println("Host: " SERVER);
-      client.println("Content-Type: application/x-www-form-urlencoded");
-      //client.println("Connection: close");
-      client.print("Content-Length: ");
-      client.println(payload.length());
-      client.println();
-      client.print(payload);
-      client.println();
-      delay(200);
-      Serial.println("\nResponse from client: ");
+void sendHeartbeat()
+{
+    Serial.println("Initialize Heartbeat Task");
+    String payload = "Alive";
 
-      // Read Response
-      while (client.connected()) {
-        while (client.available()) {
-          char c = client.read();
-          Serial.write(c);
+    while (1)
+    {
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            Serial.print("\nStarting connection to server... ");
+            if (!client.connect(SERVER, 443))
+            {
+                Serial.println("Connection failed");
+            }
+            else
+            {
+                Serial.println("Connected to server");
+                // Make a HTTP request:
+                // client.println("POST /macros/s/{gsid}/exec? HTTP/1.0");//value=Hello HTTP/1.0");
+                client.println("POST /macros/s/" + String(provisionInfo.gsid) + "/exec? HTTP/1.0"); // value=Hello HTTP/1.0");
+                client.println("Host: " SERVER);
+                client.println("Content-Type: application/x-www-form-urlencoded");
+                client.println("Connection: close");
+                client.print("Content-Length: ");
+                client.println(payload.length());
+                client.println();
+                client.print(payload);
+                client.println();
+                delay(200);
+                Serial.println("\nResponse from client: ");
+
+                // Read Response
+                //   while (client.connected()) {
+                //     while (client.available()) {
+                //       char c = client.read();
+                //       Serial.write(c);
+                //     }
+                //   }
+
+                client.stop();
+            }
         }
-      }
-      client.stop();
+        else
+        {
+            Serial.println("[Heartbeat] Wi-Fi disconnected, skipping pulse.");
+        }
     }
-  } else {
-    Serial.println("[Heartbeat] Wi-Fi disconnected, skipping pulse.");
-  }
-
-  vTaskDelay(pdMS_TO_TICKS(10000));
-  }
 }

@@ -61,15 +61,7 @@ void writingToSD() {
                         logData.Tbme, logData.Pbme,logData.RHbme,
                         logData.CO2, logData.Tco2, logData.RHco2, 
                         logData.mPm1_0, logData.mPm2_5, logData.mPm4_0, logData.mPm10, logData.cPm0_5, logData.cPm1_0, logData.cPm2_5, 
-                        sensorData.cPm2_5) + String(", ") 
-                      sensorData.cPm4_0) + String(", ")
-                      sensorData.cPm10)  + String(", ")
-                      + StrsensorData.tpSize) + String(", ")
-
-                      + String(sensorData.RHsen) + String(", ") 
-                      + String(sensorData.Tsen)  + String(", ") 
-                      + String(sensorData.VOCs)  + String(", ") 
-                      + String(sensorData.NOx)   + String(", ");  );
+                        logData.cPm2_5, logData.cPm4_0, logData.cPm10 , logData.tpSize, logData.RHsen, logData.Tsen, logData.VOCs, logData.NOx) 
             file.close(); 
             Serial.println("[SD Background Task] Wrote reading successfully.");
           } else {
@@ -88,8 +80,6 @@ void writingToSD() {
 
 /* INITIALIZE RTC */
 void initializeRTC() {
-  RTC_PCF8523 rtc;                                                 // Real Time Clock for RevB Adafruit logger shield
-
   Serial.print("Starting RTC...\t\t\t");
   Wire.begin();  // connect to RTC
   if (!rtc.begin()) {
