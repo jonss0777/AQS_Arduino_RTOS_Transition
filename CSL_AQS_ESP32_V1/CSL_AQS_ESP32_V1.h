@@ -10,7 +10,13 @@
 #include <WebServer.h>
 #include <RTClib.h>
 #include <time.h>
-#include <string?
+#include <string>
+
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <SensirionI2CSen5x.h> 
+#include "SparkFun_SCD4x_Arduino_Library.h"
+#include "CSL_AQS_ESP32_V1.h"
 // #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>  // OLED library
 
@@ -25,14 +31,11 @@
 #define HEADER "DateTime, Tbme, Pbme, RHbme, CO2, Tco2, RHco2, mPm1.0, mPm2.5, mPm4.0, mPm10, cPm0.5, cPm1.0, cPm2.5, cPm4.0, cPm10, cPm tSize, RHsen, Tsen, VOCs, NOx, Vbat, ID (Mac Address), WiFi, WiFi rssi (dBm), WiFi Quality" 
 #define PRE_PAYLOAD_APPEND_ROW "{\"command\":\"appendRow\",\"sheet_name\":\"Sheet1\",\"values\":\""
 #define PRE_PAYLOAD_ADD_HEADER "{\"command\":\"addHeader\",\"sheet_name\":\"Sheet1\",\"values\":\""
-
-
+#define SERVER "script.google.com"  // Server URL
 // Global web server
 static WebServer server(80);
 static String mac_ssid;
 String FullmacStr = "";
-
-
 
 // Constants
 static constexpr uint32_t SECRETS_MAGIC   = 0x53454352; // 'SECR'
@@ -42,7 +45,7 @@ static constexpr int      EEPROM_ADDR     = 0;
 // --- Data Structures ---
 /* STRUCT TO STORE ALL SENSOR DATA */
 typedef struct {
-  DateTime now; 
+  char now[32]; 
   float Tbme;  // BME280 temperature C
   float Pbme;  // BME280 pressure mBar
   float RHbme; // BME280 relative humidity %
