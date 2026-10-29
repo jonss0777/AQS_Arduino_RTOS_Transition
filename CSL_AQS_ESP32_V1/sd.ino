@@ -57,7 +57,7 @@ void writingToSD(void *pvParameters) {
                 if (sdConnected) {
                   logfile = SD.open(filename, FILE_APPEND);
                   if (logfile) {
-                    logfile.printf("%s,%.2f,%.2f,%.2f,%.2f,%.2f,%.2.2f\n",
+                    logfile.printf("%s,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f,%.2.2f\n",
                                    logData.now,
                                    logData.Tbme, logData.Pbme, logData.RHbme,
                                    logData.CO2, logData.Tco2, logData.RHco2,
@@ -82,4 +82,6 @@ void writingToSD(void *pvParameters) {
       }
     }
   }
+  Serial.println("Failed to find SD. Reset board once added.");
+  vTaskDelete(NULL); 
 }

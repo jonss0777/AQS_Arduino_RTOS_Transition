@@ -16,6 +16,7 @@
 */
 #include "CSL_AQS_ESP32_V1.h"
 #include <WiFiClientSecure.h>
+#include <HTTPClient.h>
 #include <secrets.h>
 
 // --- Hardware Pin Configuration ---
@@ -37,10 +38,12 @@ QueueHandle_t wclientQueue;
 QueueHandle_t sdQueue;       // Added: Dedicated queue for background SD card logging
  
 WiFiClientSecure client;
+HTTPClient http;
 
 String prepareData(data &sensorData);
 void readSensorsAndRTC(void *pvParameters);
 String preparePayload(data &sensorData);
+void writingToSD(void *pvParameters);
 
 void setup() {
   Serial.begin(115200);
@@ -68,13 +71,21 @@ void setup() {
     initializeOLED();
   }
   
-  initializeClient(); // Set certificate
-  if (!client.connect(SERVER, 443))
-      Serial.println("Connection failed");
-    else {
-      Serial.println("Connected to server");
-    }
+  // Synchronize time via NTP (Required for TLS validation)
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  Serial.print("Waiting for NTP time sync: ");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
+  }
 
+ 
+
+  // Set the Root CA certificate for strict validation
+  client.setCACert(test_root_ca);
+ 
   // Spawn independent threads on Core 0
   xTaskCreatePinnedToCore( readSensorsAndRTC, "readSensors", 3070, NULL, 2, NULL, 0);
   // Note: Increased stack memory to 4096 bytes. File system libraries need room.
@@ -90,7 +101,7 @@ void loop() {
         data sensorData;
         // Retrieve data from payload
         if (xQueueReceive(wclientQueue, &sensorData, pdMS_TO_TICKS(5)) == pdPASS) {
-          doPost(preparePayload(sensorData));
+          doPost(http,preparePayload(sensorData));
         }
       }
     } 
@@ -99,5 +110,5 @@ void loop() {
     }
   }
 
-  vTaskDelay(pdMS_TO_TICKS(SAMPLING_RATE)); 
+  vTaskDelay(pdMS_TO_TICKS(100)); 
 }

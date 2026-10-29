@@ -213,7 +213,7 @@ void readSensorsAndRTC(void *pvParameters){
       
       if (xQueueSend(sdQueue, & sensorData, pdMS_TO_TICKS(0)) != pdPASS)  Serial.println("sd queue full! Dropping sample");
       
-      vTaskDelay(pdMS_TO_TICKS(2000)); 
+       vTaskDelay(pdMS_TO_TICKS(2000)); 
     }
 
   }
